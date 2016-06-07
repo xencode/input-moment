@@ -16,7 +16,8 @@ module.exports = React.createClass({
   getDefaultProps() {
     return {
       prevMonthIcon: 'ion-ios-arrow-left',
-      nextMonthIcon: 'ion-ios-arrow-right'
+      nextMonthIcon: 'ion-ios-arrow-right',
+      isValid: function(m) { return true; }
     };
   },
 
@@ -42,6 +43,7 @@ module.exports = React.createClass({
             onChange={this.props.onChange}
             prevMonthIcon={this.props.prevMonthIcon}
             nextMonthIcon={this.props.nextMonthIcon}
+            isValid={this.props.isValid}
           />
           <Time
             className={cx('tab', {'is-active': tab === 1})}

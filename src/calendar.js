@@ -12,25 +12,40 @@ var Day = React.createClass({
     var w = this.props.w;
     var prevMonth = (w === 0 && i > 7);
     var nextMonth = (w >= 4 && i <= 14);
+    var m = moment(this.props.month);
+    var selected = this.props.selected;
+    if(prevMonth) m.subtract(1, 'month');
+    if(nextMonth) m.add(1, 'month');
+    m.date(i);
+    var valid = this.props.isValid(m);
+
     var cn = cx({
       'prev-month': prevMonth,
       'next-month': nextMonth,
-      'current-day': !prevMonth && !nextMonth && (i === this.props.d)
+      'current-day': (m.isSame(selected, 'day')),
+      'valid': valid,
+      'invalid': !valid
     });
 
-    return <td className={cn} {... this.props}>{i}</td>;
+    return <td className={cn} onClick={this.props.selectDate.bind(null, m)} {... this.props}>{i}</td>;
   }
 });
 
 module.exports = React.createClass({
   displayName: 'Calendar',
 
+  getInitialState() {
+    // The inital month shown on the calendar is the month of the current moment
+    return {month: moment(this.props.moment).startOf('month')};
+  },
+
   render() {
     var m = this.props.moment;
+    var month = this.state.month;
     var d = m.date();
-    var d1 = m.clone().subtract(1, 'month').endOf('month').date();
-    var d2 = m.clone().date(1).day();
-    var d3 = m.clone().endOf('month').date();
+    var d1 = month.clone().subtract(1, 'month').endOf('month').date();
+    var d2 = month.clone().date(1).day();
+    var d3 = month.clone().endOf('month').date();
 
     var days = [].concat(
       range(d1-d2+1, d1+1),
@@ -46,7 +61,7 @@ module.exports = React.createClass({
           <button type="button" className="prev-month" onClick={this.prevMonth}>
             <i className={this.props.prevMonthIcon}/>
           </button>
-          <span className="current-date">{m.format('MMMM YYYY')}</span>
+          <span className="current-date">{month.format('MMMM YYYY')}</span>
           <button type="button" className="next-month" onClick={this.nextMonth}>
             <i className={this.props.nextMonthIcon}/>
           </button>
@@ -64,7 +79,10 @@ module.exports = React.createClass({
               <tr key={w}>
                 {row.map((i) => (
                   <Day key={i} i={i} d={d} w={w}
-                    onClick={this.selectDate.bind(null, i, w)}
+                    month={month}
+                    selected={m}
+                    isValid={this.props.isValid}
+                    selectDate={this.selectDate}
                   />
                 ))}
               </tr>
@@ -75,25 +93,23 @@ module.exports = React.createClass({
     );
   },
 
-  selectDate(i, w) {
-    var prevMonth = (w === 0 && i > 7);
-    var nextMonth = (w >= 4 && i <= 14);
-    var m = this.props.moment;
+  selectDate(selectMoment) {
+    var m = moment(this.props.moment);
+    m.year(selectMoment.year()).month(selectMoment.month()).date(selectMoment.date());
 
-    m.date(i);
-    if(prevMonth) m.subtract(1, 'month');
-    if(nextMonth) m.add(1, 'month');
-
-    this.props.onChange(m);
+    if(this.props.isValid(m)) {
+      this.setState({month: moment(m).startOf('month')});
+      this.props.onChange(m);
+    }
   },
 
   prevMonth(e) {
     e.preventDefault();
-    this.props.onChange(this.props.moment.subtract(1, 'month'));
+    this.setState({month: this.state.month.subtract(1, 'month')});
   },
 
   nextMonth(e) {
     e.preventDefault();
-    this.props.onChange(this.props.moment.add(1, 'month'));
+    this.setState({month: this.state.month.add(1, 'month')});
   }
 });
